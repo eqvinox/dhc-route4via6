@@ -16,6 +16,19 @@
         <email>equinox@opensourcerouting.org</email>
       </address>
     </author>
+    <author fullname="Tobias Fiebig" initials="T." surname="Fiebig">
+      <organization abbrev="MPI-INF">Max-Planck-Institut fuer Informatik</organization>
+      <address>
+        <postal>
+          <street>Campus E14</street>
+          <city>Saarbruecken</city>
+          <code>66123</code>
+          <country>Germany</country>
+        </postal>
+        <phone>+49 681 9325 3527</phone>
+        <email>tfiebig@mpi-inf.mpg.de</email>
+      </address>
+    </author>
     <date year="2024"/>
     <area>Internet</area>
     <workgroup>Dynamic Host Configuration</workgroup>
