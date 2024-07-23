@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vim: et:ts=2:sw=2
+  -->
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="exp" docName="draft-equinox-dhc-route4via6" ipr="trust200902" obsoletes="" submissionType="IETF" consensus="true" xml:lang="en" version="3">
+  <front>
+    <title abbrev="dhc-route4via6">DHCPv4 Option for IPv4 routes with IPv6 nexthops</title>
+    <seriesInfo name="Internet-Draft" value="draft-equinox-dhc-route4via6"/>
+    <author fullname="David 'equinox' Lamparter" initials="D" surname="Lamparter">
+      <organization>NetDEF, Inc.</organization>
+      <address>
+        <postal>
+          <city>San Jose</city>
+          <country>USA</country>
+        </postal>
+        <email>equinox@diac24.net</email>
+        <email>equinox@opensourcerouting.org</email>
+      </address>
+    </author>
+    <date year="2024"/>
+    <area>Internet</area>
+    <workgroup>Dynamic Host Configuration</workgroup>
+    <keyword>ipv6</keyword>
+    <abstract>
+      <t>
+        <cref>
+          This draft lives at <eref target="https://github.com/eqvinox/dhc-route4via6"/>
+        </cref>
+      </t>
+      <t>
+          As a result of the shortage of IPv4 addresses, installations are
+          increasingly recovering IPv4 addresses from uses where they are not
+          strictly necessary.  One such situation is in establishing next hops
+          for IPv4 routes, replacing this use with IPv6 addresses.  This
+          document describes how to provision DHCP-configured hosts with
+          their routes in such a situation.
+      </t>
+    </abstract>
+  </front>
+  <middle>
+    <section>
+      <name>Introduction</name>
+      <t>
+          more intro TBA
+      </t>
+      <t>
+          A particularly interesting scenario enabled by the extension
+          described here is the complete removal of IPv4 addresses from
+          first-hop routers acting as DHCP relays, while still providing IPv4
+          connectivity.  In this scenario, the relay (assumed colocated with
+          the router) has no IPv4 address to use to communicate with the
+          client.  An almost-working solution for this case is presented by
+          <xref target="DHCPv6"/> with the <xref target="DHCP4o6"/> transport
+          method.  Since this mechanism encapsulates IPv4 DHCP messages, all
+          related IPv4 configuration can be carried - but notably there is no
+          way to encode an IPv6 default gateway or other route.
+      </t>
+    </section>
+    <section>
+      <name>Requirements Language</name>
+      <t>
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL",
+          "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT
+          RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+          interpreted as described in BCP 14 <xref target="RFC2119"/>
+          <xref target="RFC8174"/> when, and only when, they appear in
+          all capitals, as shown here.
+      </t>
+    </section>
+
+    <section anchor="behavior">
+      <name>Expected host behavior</name>
+      <t>
+          The option described in this document is intended to be implemented
+          on hosts supporting IPv4 routes with IPv6 nexthops as described
+          in <xref target="v4overv6"/>.  Hosts that do not support this
+          function MUST ignore the option described in this document and
+          behave as before.
+      </t>
+      <t>
+          Hosts that support <xref target="v4overv6"/> behavior and acquire
+          their configuration from <xref target="DHCP"/> SHOULD implement the
+          option described here.
+      </t>
+      <section anchor="overlap">
+        <name>Overlapping routes</name>
+        <t>
+            <xref target="RFC3442"/> documents a mechanism to communicate a
+            set of routes and their nexthops over DHCP.  The original DHCP
+            "router" option (code 3) may communicate a default router.  If
+            either of these options is used, the routes communicated may
+            overlap.
+        </t>
+        <t>
+            To get consistent and unsurprising behavior, this document places
+            the follwing expectations on the host:
+        </t>
+        <ul>
+          <li>
+              Routes that describe distinct destination prefixes MUST be
+              handled independently.  This includes routes that differ only
+              in prefix length.  As a result, the routing table MAY contain
+              a mix of IPv4 routes with IPv4 nexthops as well as IPv6
+              nexthops.  Standard longest prefix match behavior MUST be
+              observed.
+          </li>
+          <li>
+              If routes with the same destination prefix are described both
+              with previously existing methods as well as the options
+              documented here, the route described by the latter MUST be used
+              and the routes with IPv4 nexthops MUST be discarded.  This
+              notably includes "unreachable" routes described here;  a route
+              with an IPv4 nexthop for such a destination MUST still be
+              discarded.
+          </li>
+          <li>
+              Multiple routes for the same destination prefix with different
+              nexthops of the same address family SHOULD be combined into a
+              single route for equal-cost multipath behavior, if the host
+              supports this.  If ECMP routes are not supported, the host
+              MUST deterministically choose one of the routes.  This MAY
+              be done by using the first or last option as seen in DHCP
+              packet order, or by choosing the numerically lowest or highest
+              nexthop.
+          </li>
+        </ul>
+      </section>
+      <section anchor="default">
+        <name>Default route</name>
+        <t>
+            The default route is expressed here as a route for 0.0.0.0/0.
+            There is no distinct special encoding for a default gateway, any
+            nexthop for 0.0.0.0/0 MUST be treated as if it were a default
+            gateway.
+        </t>
+      </section>
+      <section anchor="connected">
+        <name>Connected subnet</name>
+        <t>
+            TODO: determine what behavior is reasonable here 
+        </t>
+      </section>
+    </section>
+
+    <section anchor="encoding">
+      <name>DHCP Option encoding</name>
+      <artwork name="DHCP(v4) extended static route option">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Type (TBA1)  |     Length    |             Routes            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+:                              ...                              :</artwork>
+      <dl>
+        <dt>Type</dt>
+        <dd>TBA1 (field defined in <xref target="DHCP-OPT"/>)</dd>
+        <dt>Length</dt>
+        <dd>as defined in <xref target="DHCP-OPT"/></dd>
+        <dt>Routes</dt>
+        <dd>
+          <t>
+              One or more routes encoded as described below.  DHCP Servers
+              MUST NOT emit this option with an empty payload.  DHCP clients
+              MUST ignore this option if its length is zero.
+          </t>
+          <t>
+              It is easily possible for encoded routes and their nexthops
+              to exceed the encodable size of 255 bytes.  This is addressed by
+              allowing multiple occurences of this option.  DHCP clients MUST
+              process all instances of this option additively.  DHCP servers
+              MAY encode configured routes in as many instances of this option
+              as they choose;  they SHOULD however ideally choose a
+              space-efficient encoding.
+          </t>
+        </dd>
+      </dl>
+      <section anchor="routeenc">
+        <name>Route encoding</name>
+        <artwork name="Route (item) for DHCP(v4) extended static route option">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+
+| T | prefixlen |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    IPv4 prefix (0 - 4 octets)                 |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                 IPv6 nexthop (0, 8 or 16 octets)              |
+:                              ...                              :
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</artwork>
+        <dl>
+          <dt>T</dt>
+          <dd>
+              Determines the function and nexthop encoding for this route.
+              Valid values and their meanings are:
+          </dd>
+          <dt>T = 0 - use DHCP packet source</dt>
+          <dd>
+            <t>
+                Indicates that this route should use the DHCP packet's
+                source address as nexthop.   When <xref target="DHCP4o6"/> is
+                in use, hosts MUST retrieve the IPv6 source address of the
+                DHCPv6 packet carrying the DHCPV4-RESPONSE message.
+            </t>
+            <t>
+                TODO: does it really make sense to support IPv4 here?  Maybe
+                only allow this with DHCP4o6?
+            </t>
+            <t>
+                The IPv6 nexthop field for this route has zero length.
+            </t>
+          </dd>
+          <dt>T = 1 - unreachable destination</dt>
+          <dd>
+            <t>
+                Indicates that the destination prefix specified by this
+                route is unreachable.  More specific destination prefixes
+                may still be reachable.
+            </t>
+            <t>
+                TODO: specify fault mix (unreachable+reachable)
+            </t>
+            <t>
+                The IPv6 nexthop field for this route has zero length.
+            </t>
+          </dd>
+          <dt>T = 2 - link-local IPv6 nexthop</dt>
+          <dd>
+            <t>
+                Indicates that this route uses a link-local IPv6 nexthop address,
+                encoding only the latter 8 bytes of the address for space
+                efficiency.  The upper 8 bytes of the address are filled in
+                with fe80::.
+            </t>
+            <t>
+                The IPv6 nexthop field for this route is 8 octets long.
+            </t>
+          </dd>
+          <dt>T = 3 - generic IPv6 nexthop</dt>
+          <dd>
+            <t>
+                Indicates that this route uses the specified IPv6 nexthop,
+                encoding the full address.  The encoded address may be any
+                type of unicast IPv4 address, including GUA, ULA and LL.
+            </t>
+            <t>The IPv6 nexthop field for this route is 16 octets long.</t>
+          </dd>
+          <dt>prefixlen</dt>
+          <dd>IPv4 prefix length, integer value from 0 to 32 (inclusive)</dd>
+          <dt>IPv4 prefix</dt>
+          <dd>
+              The route's destination prefix, encoded in as few bytes necessary
+              for the given prefixlen value.  Calculate as ceil(prefixlen / 8).
+          </dd>
+          <dt>IPv6 nexthop</dt>
+          <dd>encoding as determined by T</dd>
+        </dl>
+      </section>
+    </section>
+    <section anchor="yang">
+      <name>YANG model</name>
+      <t>
+        <em>TBD if needed</em>
+      </t>
+    </section>
+    <section anchor="Security">
+      <name>Security Considerations</name>
+      <t>
+        <em>TBD</em>
+      </t>
+    </section>
+    <section anchor="privacy">
+      <name>Privacy Considerations</name>
+      <t>
+        <em>TBD</em>
+      </t>
+    </section>
+    <section anchor="IANA">
+      <name>IANA Considerations</name>
+      <t>
+          A codepoint from the "BOOTP Vendor Extensions and DHCP Options"
+          registry is requested for use with the option described in
+          <xref target="encoding"/>.
+          <cref>Editor note: 2 places of TBA1</cref>
+      </t>
+    </section>
+  </middle>
+  <back>
+    <references>
+      <name>References</name>
+      <references>
+        <name>Normative References</name>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml"/>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml"/>
+        <reference anchor="DHCP">
+          <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2131.xml" xpointer="xpointer(/reference/*)"/>
+        </reference>
+        <reference anchor="DHCP-OPT">
+          <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2132.xml" xpointer="xpointer(/reference/*)"/>
+        </reference>
+        <reference anchor="v4overv6">
+          <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.chroboczek-intarea-v4-via-v6" xpointer="xpointer(/reference/*)"/>
+        </reference>
+      </references>
+      <references>
+        <name>Informative References</name>
+        <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3442.xml"/>
+        <reference anchor="DHCPv6" target="https://www.rfc-editor.org/info/rfc8415">
+          <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8415.xml" xpointer="xpointer(/reference/*)"/>
+        </reference>
+        <reference anchor="DHCP4o6" target="https://www.rfc-editor.org/info/rfc7341">
+          <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7341.xml" xpointer="xpointer(/reference/*)"/>
+        </reference>
+      </references>
+    </references>
+    <section anchor="ack" numbered="false">
+      <name>Acknowledgements</name>
+      <t>
+        <em>TBD, FILL IN</em>
+      </t>
+    </section>
+    <section anchor="examples" numbered="false">
+      <name>Example encoded options</name>
+      <dl>
+        <dt>(TBA) 01 00</dt>
+        <dd>
+            A single default route (0.0.0.0/0) using the DHCP packet's source
+            address as nexthop.
+        </dd>
+        <dt>(TBA) 0a 88 0a 00 00 00 00 00 00 00 01</dt>
+        <dd>
+            A single route for 10.0.0.0/8 via fe80::1.
+        </dd>
+        <dt>(TBA) 0a 40 d8 c0 00 02 20 01 0d b8 12 34 56 78 00 00 00 00 00 00 00 00</dt>
+        <dd>
+            A route marking 0.0.0.0/0 as unreachable, and another route 
+            for 192.0.2.0/24 via 2001:db8:1234:5678::.
+        </dd>
+      </dl>
+    </section>
+    <section numbered="false">
+      <name>Editing notes (TO BE REMOVED)</name>
+      <ul>
+        <li>
+            -00: 
+        </li>
+      </ul>
+    </section>
+  </back>
+</rfc>
