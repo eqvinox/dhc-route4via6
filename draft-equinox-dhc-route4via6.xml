@@ -53,7 +53,21 @@
     <section>
       <name>Introduction</name>
       <t>
-          more intro TBA
+        <cref>
+            more intro TBA
+        </cref>
+      </t>
+      <t>
+        <cref>
+            DHCP is likely handing out individual IPv4 addresses, i.e. the
+            subnet mask is /32 when this mechanism is relevant.
+        </cref>
+      </t>
+      <t>
+        <cref>
+            To preempt any misunderstanding, this is an <strong>IPv4 DHCP</strong>
+            option.  <strong>NOT a DHCPv6 option</strong>.
+        </cref>
       </t>
       <t>
           A particularly interesting scenario enabled by the extension
@@ -66,6 +80,12 @@
           method.  Since this mechanism encapsulates IPv4 DHCP messages, all
           related IPv4 configuration can be carried - but notably there is no
           way to encode an IPv6 default gateway or other route.
+      </t>
+      <t>
+          If the router and relay are not co-located, the relay may have an
+          IPv4 address while the router does not.  In this case, the option
+          described in this document could be carried in a plain IPv4 DHCP
+          message.
       </t>
     </section>
     <section>
@@ -147,9 +167,12 @@
         </t>
       </section>
       <section anchor="connected">
-        <name>Connected subnet</name>
+        <name>Routes clashing with the connected subnet</name>
         <t>
-            TODO: determine what behavior is reasonable here 
+          <cref>
+              TODO: determine what behavior is reasonable here.  (The client
+              is likely to be given a /32 subnet mask anyway.)
+          </cref>
         </t>
       </section>
     </section>
@@ -202,8 +225,26 @@
         <dl>
           <dt>T</dt>
           <dd>
+            <t>
               Determines the function and nexthop encoding for this route.
               Valid values and their meanings are:
+            </t>
+            <t>
+              <cref>
+                  This encoding mechanism might be excessive.  The original
+                  motivation was to have a way to tell the client that it
+                  should use the relay's link-local address as next-hop.
+                  Filling that in from the DHCP server is annoying, since the
+                  server has otherwise no need to know that address.  It's
+                  not a problem if the operator configures a fixed LL on all
+                  routers (e.g. fe80::1), but without that each router would
+                  just be using its autoconf'd LL.
+              </cref>
+              <cref>
+                  Having an encoding for 'unreachable' routes and a shorthand
+                  for link-local addresses is really just "fluff" too.
+              </cref>
+            </t>
           </dd>
           <dt>T = 0 - use DHCP packet source</dt>
           <dd>
@@ -342,7 +383,7 @@
         <dd>
             A single route for 10.0.0.0/8 via fe80::1.
         </dd>
-        <dt>(TBA) 0a 40 d8 c0 00 02 20 01 0d b8 12 34 56 78 00 00 00 00 00 00 00 00</dt>
+        <dt>(TBA) 15 40 d8 c0 00 02 20 01 0d b8 12 34 56 78 00 00 00 00 00 00 00 00</dt>
         <dd>
             A route marking 0.0.0.0/0 as unreachable, and another route 
             for 192.0.2.0/24 via 2001:db8:1234:5678::.
