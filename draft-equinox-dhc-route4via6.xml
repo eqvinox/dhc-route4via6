@@ -200,12 +200,11 @@
           </t>
           <t>
               It is easily possible for encoded routes and their nexthops
-              to exceed the encodable size of 255 bytes.  This is addressed by
-              allowing multiple occurences of this option.  DHCP clients MUST
-              process all instances of this option additively.  DHCP servers
-              MAY encode configured routes in as many instances of this option
-              as they choose;  they SHOULD however ideally choose a
-              space-efficient encoding.
+              to exceed the encodable size of 255 bytes.  This is addressed
+              by applying the mechanism specified in
+              <xref target="DHCP-LONGOPT"/>;  both clients and servers MUST
+              follow the procedure described there when implementing the option
+              described in this document.
           </t>
         </dd>
       </dl>
@@ -349,6 +348,9 @@
         </reference>
         <reference anchor="DHCP-OPT">
           <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2132.xml" xpointer="xpointer(/reference/*)"/>
+        </reference>
+        <reference anchor="DHCP-LONGOPT">
+          <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3396.xml" xpointer="xpointer(/reference/*)"/>
         </reference>
         <reference anchor="v4overv6">
           <xi:include href="https://xml2rfc.ietf.org/public/rfc/bibxml3/reference.I-D.chroboczek-intarea-v4-via-v6" xpointer="xpointer(/reference/*)"/>
