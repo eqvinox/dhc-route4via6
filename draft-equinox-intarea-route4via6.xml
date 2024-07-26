@@ -378,22 +378,30 @@
     </section>
     <section anchor="examples" numbered="false">
       <name>Example encoded options</name>
-      <dl>
-        <dt>(TBA) 01 00</dt>
-        <dd>
-            A single default route (0.0.0.0/0) using the DHCP packet's source
-            address as nexthop.
-        </dd>
-        <dt>(TBA) 0a 88 0a 00 00 00 00 00 00 00 01</dt>
-        <dd>
-            A single route for 10.0.0.0/8 via fe80::1.
-        </dd>
-        <dt>(TBA) 15 40 d8 c0 00 02 20 01 0d b8 12 34 56 78 00 00 00 00 00 00 00 00</dt>
-        <dd>
-            A route marking 0.0.0.0/0 as unreachable, and another route 
-            for 192.0.2.0/24 via 2001:db8:1234:5678::.
-        </dd>
-      </dl>
+      <ul>
+        <li>
+          <sourcecode>(TBA) 01 00</sourcecode>
+          <t>
+              A single default route (0.0.0.0/0) using the DHCP packet's source
+              address as nexthop.
+          </t>
+        </li>
+        <li>
+          <sourcecode>(TBA) 0a 88 0a 00 00 00 00 00 00 00 01</sourcecode>
+          <t>
+              A single route for 10.0.0.0/8 via fe80::1.
+          </t>
+        </li>
+        <li>
+          <sourcecode>(TBA) 15
+40
+d8 c0 00 02 20 01 0d b8 12 34 56 78 00 00 00 00 00 00 00 00</sourcecode>
+          <t>
+              A route marking 0.0.0.0/0 as unreachable, and another route
+              for 192.0.2.0/24 via 2001:db8:1234:5678::.
+          </t>
+        </li>
+      </ul>
     </section>
     <section numbered="false">
       <name>Editing notes (TO BE REMOVED)</name>
