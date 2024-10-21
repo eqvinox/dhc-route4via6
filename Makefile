@@ -1,5 +1,5 @@
 DRAFTS = \
-	 draft-equinox-intarea-route4via6.xml \
+	 draft-equinox-intarea-dhcpv4-route4via6.xml \
 	 # end
 
 
