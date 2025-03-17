@@ -38,17 +38,17 @@
     <keyword>route</keyword>
     <abstract>
       <t>
-        <cref>
-          This draft lives at <eref target="https://github.com/eqvinox/dhc-route4via6"/>
-        </cref>
-      </t>
-      <t>
           As a result of the shortage of IPv4 addresses, installations are
           increasingly recovering IPv4 addresses from uses where they are not
           strictly necessary.  One such situation is in establishing next hops
           for IPv4 routes, replacing this use with IPv6 addresses.  This
           document describes how to provision DHCP-configured hosts with
           their routes in such a situation.
+      </t>
+      <t>
+        <cref>
+          This draft lives at <eref target="https://github.com/eqvinox/dhc-route4via6"/>
+        </cref>
       </t>
     </abstract>
   </front>
