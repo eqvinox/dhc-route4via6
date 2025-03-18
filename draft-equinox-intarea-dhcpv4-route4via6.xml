@@ -57,9 +57,9 @@
       <name>Introduction</name>
       <t>
           IPv4 is currently (and will likely be for some time) in a situation
-          where IPv4 addresses are in short supply, but services must still be
-          made available to users that do not have IPv6 connectivity yet.  In
-          the saddest cases, even the service side may not have IPv6 support
+          where IPv4 addresses are in short supply, but services still need to be
+          made available to users that do not yet have IPv6 connectivity.  In
+          some cases, even the service side may not have IPv6 support
           yet.  In other cases some aspect of the service precludes using
           proxy-style service delivery with translation technologies on either
           or both sides.  This leads to a need for fine-grained deployment of
@@ -74,8 +74,9 @@
           client.  An almost-working solution for this case is presented by
           <xref target="DHCPv6"/> with the <xref target="DHCP4o6"/> transport
           method.  Since this mechanism encapsulates IPv4 DHCP messages, all
-          related IPv4 configuration can be carried - but notably there is no
-          way to encode an IPv6 default gateway or other route.
+          related IPv4 configuration can be carried. However, DHCPv4 does not
+          support a way to encode an IPv6 default gateway or other routes,
+          which is necessary in this case.
       </t>
       <t>
           If the router and relay are not co-located, the relay may have an
@@ -117,7 +118,7 @@
             a list of destination prefixes and next-hops.  It is expected that
             the container will in most cases present one destination prefix
             with one or two next-hops.  However, DHCPv4 clients processing the
-            option MUST support processing multiple destination prefix
+            option <bcp14>MUST</bcp14> support processing multiple destination prefix
             suboptions.
           <cref>
             <strong>NB/TODO: this implies <xref target="DHCP-LONGOPT"/> is NOT
@@ -126,48 +127,48 @@
         </li>
         <li>
             when multiple destination prefixes occur in the same container,
-            all of the next-hops for that container MUST be processed for all
+            all of the next-hops for that container <bcp14>MUST</bcp14> be processed for all
             of the destination prefixes in that container.
         </li>
         <li>
             if no destination prefix sub-option occurs in a container, the
             IPv4 default route (0.0.0.0/0) is implicitly expressed and the
-            container MUST be processed as if the 0.0.0.0/0 destination prefix
-            were explicitly encoded.
+            container <bcp14>MUST</bcp14> be processed as if the 0.0.0.0/0 destination prefix
+            was explicitly encoded.
         </li>
         <li>
             if no next-hop sub-option occurs in a container, the "source of
             DHCP packet" function is encoded as with the unspecified-address
-            (::) next-hop described below.  The container MUST be processed
+            (::) next-hop described below.  The container <bcp14>MUST</bcp14> be processed
             as if a :: next-hop were explicitly encoded.
         </li>
         <li>
             both sub-options may be absent, the rules in the previous two
-            bullet points MUST be applied in combination.  This is in fact
+            bullet points <bcp14>MUST</bcp14> be applied in combination.  This is in fact
             expected to be a relatively common setup and is intentionally made
             available with a space-preserving encoding.
         </li>
         <li>
             the container can be repeated an arbitrary number of times with
-            different suboptions.  Any single destination prefix MUST NOT be
+            different suboptions.  Any single destination prefix <bcp14>MUST NOT</bcp14> be
             expressed in more than one container.  If encountering duplicate
-            destination prefixes, clients MAY pick one at random, or MAY merge
+            destination prefixes, clients <bcp14>MAY</bcp14> pick one at random, or <bcp14>MAY</bcp14> merge
             nexthops;  but this is considered a network side configuration
             error.  However, note that this refers only to repeating the exact
             same destination prefix and prefix length. A differing prefix
-            length presents a distinct destination prefix and MUST be processed
+            length presents a distinct destination prefix and <bcp14>MUST</bcp14> be processed
             independently.
         </li>
         <li>
-            next-hops MUST NOT repeat within the same container, but the same
-            next-hop MAY occur in any number of containers and MUST be
+            next-hops <bcp14>MUST NOT</bcp14> repeat within the same container, but the same
+            next-hop <bcp14>MAY</bcp14> occur in any number of containers and <bcp14>MUST</bcp14> be
             processed normally in that case.
         </li>
         <li>
             if multiple next-hops are expressed in the same container, this
             represents equal-cost multipath routes across the set of next-hops.
-            Clients processing the option MUST install at least one of the
-            listed nexthops but MAY choose any subset at their discretion, e.g.
+            Clients processing the option <bcp14>MUST</bcp14> install at least one of the
+            listed nexthops but <bcp14>MAY</bcp14> choose any subset at their discretion, e.g.
             if their capability of installing ECMP is limited to some number of
             next-hops (or is 1, i.e. no ECMP support.)
         </li>
@@ -185,7 +186,7 @@
               the unspecified-address nexthop (which is also implied by the
               absence of any nexthop suboption) indicates that the routes in
               the container should use the DHCP packet's source address as
-              nexthop.   When <xref target="DHCP4o6"/> is in use, hosts MUST
+              nexthop.   When <xref target="DHCP4o6"/> is in use, hosts <bcp14>MUST</bcp14>
               retrieve the IPv6 source address of the DHCPv6 packet carrying
               the DHCPV4-RESPONSE message.
             <cref>
@@ -195,19 +196,19 @@
           </li>
           <li>
               the <xref target="DISCARD">Discard-Only Address block
-                (0100::/64)</xref> MAY be used to express
+                (0100::/64)</xref> <bcp14>MAY</bcp14> be used to express
               unreachable destinations, in particular if only limited but not
               global IPv4 connectivity is available.  If this is used, it
-              MUST be the only next-hop suboption in one container, clients
-              SHOULD ignore the entire container if this is not respected.  If
+              <bcp14>MUST</bcp14> be the only next-hop suboption in one container, clients
+              <bcp14>SHOULD</bcp14> ignore the entire container if this is not respected.  If
               a client is unable to mark destinations as unreachable in its
-              routing table, it MAY ignore the container and SHOULD indicate
+              routing table, it <bcp14>MAY</bcp14> ignore the container and <bcp14>SHOULD</bcp14> indicate
               a client configuration issue in its administrative interfaces.
           </li>
           <li>
-              any unicast IPv6 address MAY be used as next-hop.  This
+              any unicast IPv6 address <bcp14>MAY</bcp14> be used as next-hop.  This
               specifically also covers link-local addresses, which the client
-              MUST support and MUST associate with the link that it has
+              <bcp14>MUST</bcp14> support and <bcp14>MUST</bcp14> associate with the link that it has
               received the DHCP packets on.
           </li>
           <li>
@@ -219,7 +220,7 @@
           </li>
           <li>
             <t>
-                the following types/ranges of addresses are invalid and MUST
+                the following types/ranges of addresses are invalid and <bcp14>MUST</bcp14>
                 NOT be used;  no client behavior is specified if any are
                 present in a container:
             </t>
@@ -241,7 +242,7 @@
         <t>
             Some IPv4 prefixes, due to their function given in
             <xref target="IANA-IPv4"/>, do not make sense to use with this
-            option.  DHCPv4 servers MUST NOT encode and DHCPv4 clients MUST
+            option.  DHCPv4 servers <bcp14>MUST NOT</bcp14> encode and DHCPv4 clients <bcp14>MUST</bcp14>
             ignore the following prefixes as well as any more-specific prefixes
             within them:
         </t>
@@ -265,12 +266,12 @@
           The option described in this document is intended to be implemented
           on hosts supporting IPv4 routes with IPv6 nexthops as described
           in <xref target="v4overv6"/>.  Hosts that do not support the behavior
-          described there MUST NOT request and MUST ignore the option described
+          described there <bcp14>MUST NOT</bcp14> request and <bcp14>MUST</bcp14> ignore the option described
           in this document.
       </t>
       <t>
           Hosts that support <xref target="v4overv6"/> behavior and acquire
-          their configuration from <xref target="DHCP"/> SHOULD implement the
+          their configuration from <xref target="DHCP"/> <bcp14>SHOULD</bcp14> implement the
           option described here.
       </t>
       <section anchor="singleaddr">
@@ -283,11 +284,11 @@
         </t>
         <t>
             DHCPv4 clients implementing the option described in this document
-            MUST process such a Subnet Mask option value as assigning a single
+            <bcp14>MUST</bcp14> process such a Subnet Mask option value as assigning a single
             address.  There is no network or broadcast address for this
             "single-sized" pseudo-subnet.  No IPv4 addresses are
             expressed to be on-link for the purposes of <xref target="ARP"/>
-            (though they MAY become so due to additional, e.g. local
+            (though they <bcp14>MAY</bcp14> become so due to additional, e.g. local
             configuration assigning additional addresses to the interface.)
         </t>
         <t>
@@ -316,28 +317,28 @@
         </t>
         <ul>
           <li>
-              Routes that describe distinct destination prefixes MUST be
+              Routes that describe distinct destination prefixes <bcp14>MUST</bcp14> be
               handled independently.  This includes routes that differ only
-              in prefix length.  As a result, the routing table MAY contain
+              in prefix length.  As a result, the routing table <bcp14>MAY</bcp14> contain
               a mix of IPv4 routes with IPv4 nexthops as well as IPv6
-              nexthops.  Standard longest prefix match behavior MUST be
+              nexthops.  Standard longest prefix match behavior <bcp14>MUST</bcp14> be
               observed.
           </li>
           <li>
               If routes with the same destination prefix are described both
               with previously existing methods as well as the options
-              documented here, the route described by the latter MUST be used
-              and the routes with IPv4 nexthops MUST be discarded.  This
+              documented here, the route described by the latter <bcp14>MUST</bcp14> be used
+              and the routes with IPv4 nexthops <bcp14>MUST</bcp14> be discarded.  This
               notably includes "unreachable" routes described here;  a route
-              with an IPv4 nexthop for such a destination MUST still be
+              with an IPv4 nexthop for such a destination <bcp14>MUST</bcp14> still be
               discarded.
           </li>
           <li>
               Multiple routes for the same destination prefix with different
-              nexthops of the same address family SHOULD be combined into a
+              nexthops of the same address family <bcp14>SHOULD</bcp14> be combined into a
               single route for equal-cost multipath behavior, if the host
               supports this.  If ECMP routes are not supported, the host
-              MUST deterministically choose one of the routes.  This MAY
+              <bcp14>MUST</bcp14> deterministically choose one of the routes.  This <bcp14>MAY</bcp14>
               be done by using the first or last option as seen in DHCP
               packet order, or by choosing the numerically lowest or highest
               nexthop.
@@ -351,7 +352,7 @@
             which is also implied by the absence of any destination prefix
             suboption.
             There is no distinct special encoding for a default gateway, any
-            nexthop for 0.0.0.0/0 MUST be treated as if it were a default
+            nexthop for 0.0.0.0/0 <bcp14>MUST</bcp14> be treated as if it were a default
             gateway.
         </t>
       </section>
@@ -403,7 +404,7 @@
           <dt>Length</dt>
           <dd>as defined in <xref target="DHCP-OPT"/></dd>
           <dt>R</dt>
-          <dd>Reserved bits.  MUST be sent as zero, MUST be ignored on receipt.</dd>
+          <dd>Reserved bits.  <bcp14>MUST</bcp14> be sent as zero, <bcp14>MUST</bcp14> be ignored on receipt.</dd>
           <dt>prefixlen</dt>
           <dd>IPv4 prefix length, integer value from 0 to 32 (inclusive)</dd>
           <dt>IPv4 prefix</dt>
@@ -422,8 +423,8 @@
         </dl>
         <t>
             If the Length field indicates additional data past the IPv4 prefix
-            value, clients MUST ignore it.  Future documents MAY introduce
-            other behavior here and servers MUST NOT send any such data until
+            value, clients <bcp14>MUST</bcp14> ignore it.  Future documents <bcp14>MAY</bcp14> introduce
+            other behavior here and servers <bcp14>MUST NOT</bcp14> send any such data until
             such a point.
         </t>
       </section>
