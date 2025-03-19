@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- vim: et:ts=2:sw=2
   -->
-<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="exp" docName="draft-equinox-intarea-dhcpv4-route4via6" ipr="trust200902" obsoletes="" submissionType="IETF" consensus="true" xml:lang="en" version="3">
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude" category="std" docName="draft-equinox-intarea-dhcpv4-route4via6" ipr="trust200902" obsoletes="" submissionType="IETF" consensus="true" xml:lang="en" version="3">
   <front>
     <title abbrev="intarea-dhcpv4-route4via6">DHCPv4 Option for IPv4 routes with IPv6 nexthops</title>
     <seriesInfo name="Internet-Draft" value="draft-equinox-intarea-dhcpv4-route4via6"/>
