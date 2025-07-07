@@ -104,73 +104,48 @@
     <section anchor="semantics">
       <name>Extended static route function</name>
       <t>
-          This document defines a DHCPv4 option container with 2 suboptions
-          for use within it.
-          The container can occur multiple times, and the suboptions can
-          each occur zero, one, or multiple times in each container.  Each
-          container represents one "fully-filled matrix" of destination
-          prefixes and next-hops, i.e. to be interpreted as a full cartesian
-          combination of the two sets.  In detail, this means:
+          This document defines a list-style DHCPv4 option.  Each item
+          describes a pair of IPv4 destination prefix and an associated
+          nexthop. As per usual DHCPv4 processing
+          (<xref target="DHCP-LONGOPT"/>), multiple instances of the option
+          are concatenated before splitting the result up into individual
+          pairs.
       </t>
       <ol>
         <li>
-            each option container is processed as one unit, building up
-            a list of destination prefixes and next-hops.  It is expected that
-            the container will in most cases present one destination prefix
-            with one or two next-hops.  However, DHCPv4 clients processing the
-            option <bcp14>MUST</bcp14> support processing multiple destination prefix
-            suboptions.
-          <cref>
-            <strong>NB/TODO: this implies <xref target="DHCP-LONGOPT"/> is NOT
-              applicable here. Not sure if that's a good idea.</strong>
-          </cref>
+            each pair is processed as one unit, building up a list of
+            destination prefixes and next-hops.  It is expected that the
+            list will in most cases present only one destination prefix (the
+            default route) with one or two next-hops.  However, DHCPv4 clients
+            processing the option <bcp14>MUST</bcp14> support processing
+            multiple pairs of distinct destination prefix and nexthop.
         </li>
         <li>
-            when multiple destination prefixes occur in the same container,
-            all of the next-hops for that container <bcp14>MUST</bcp14> be processed for all
-            of the destination prefixes in that container.
+            if one and the same destination prefix (equal address and prefix
+            length) occurs multiple times, they <bcp14>MUST</bcp14> be
+            merged into a single route with multiple nexthops (equal-cost
+            multipath routing).  The client <bcp14>MAY</bcp14> impose a limit
+            to the number of nexthops, and if that number is exceeded discard
+            an arbitrary choice of excess nexthops.  The client <bcp14>MUST
+            NOT</bcp14> reject the route in its entirety if the number of
+            nexthops is exceeded.
+            (Note the limit is permitted to be 1, i.e. no support for multiple
+            nexthops.)
         </li>
         <li>
-            if no destination prefix sub-option occurs in a container, the
-            IPv4 default route (0.0.0.0/0) is implicitly expressed and the
-            container <bcp14>MUST</bcp14> be processed as if the 0.0.0.0/0 destination prefix
-            was explicitly encoded.
+            the client <bcp14>MUST</bcp14> silently ignore repeats of the same
+            pair of destination prefix and nexthop.  The server <bcp14>SHOULD
+            NOT</bcp14> send such an option value.
         </li>
         <li>
-            if no next-hop sub-option occurs in a container, the "source of
-            DHCP packet" function is encoded as with the unspecified-address
-            (::) next-hop described below.  The container <bcp14>MUST</bcp14> be processed
-            as if a :: next-hop were explicitly encoded.
-        </li>
-        <li>
-            both sub-options may be absent, the rules in the previous two
-            bullet points <bcp14>MUST</bcp14> be applied in combination.  This is in fact
-            expected to be a relatively common setup and is intentionally made
-            available with a space-preserving encoding.
-        </li>
-        <li>
-            the container can be repeated an arbitrary number of times with
-            different suboptions.  Any single destination prefix <bcp14>MUST NOT</bcp14> be
-            expressed in more than one container.  If encountering duplicate
-            destination prefixes, clients <bcp14>MAY</bcp14> pick one at random, or <bcp14>MAY</bcp14> merge
-            nexthops;  but this is considered a network side configuration
-            error.  However, note that this refers only to repeating the exact
-            same destination prefix and prefix length. A differing prefix
-            length presents a distinct destination prefix and <bcp14>MUST</bcp14> be processed
-            independently.
-        </li>
-        <li>
-            next-hops <bcp14>MUST NOT</bcp14> repeat within the same container, but the same
-            next-hop <bcp14>MAY</bcp14> occur in any number of containers and <bcp14>MUST</bcp14> be
-            processed normally in that case.
-        </li>
-        <li>
-            if multiple next-hops are expressed in the same container, this
-            represents equal-cost multipath routes across the set of next-hops.
-            Clients processing the option <bcp14>MUST</bcp14> install at least one of the
-            listed nexthops but <bcp14>MAY</bcp14> choose any subset at their discretion, e.g.
-            if their capability of installing ECMP is limited to some number of
-            next-hops (or is 1, i.e. no ECMP support.)
+            if the nexthop is a link-local address, it <bcp14>MUST</bcp14> be
+            accepted and associated with the link the DHCP packet was received
+            on.  This also applies when using the DHCP packet's source address
+            when it is a link-local address.
+            In most cases, "link" will mean "interface", however in some cases
+            the client may have further information on when it is communicating
+            on the same link (e.g. 802.11 SSID, or configured link aggregation)
+            and apply that instead.
         </li>
       </ol>
       <section anchor="nexthops">
@@ -183,9 +158,8 @@
         </t>
         <ol>
           <li>
-              the unspecified-address nexthop (which is also implied by the
-              absence of any nexthop suboption) indicates that the routes in
-              the container should use the DHCP packet's source address as
+              the unspecified-address nexthop indicates that the destination
+              prefix in the pair should use the DHCP packet's source address as
               nexthop.   When <xref target="DHCP4o6"/> is in use, hosts <bcp14>MUST</bcp14>
               retrieve the IPv6 source address of the DHCPv6 packet carrying
               the DHCPV4-RESPONSE message.
@@ -199,11 +173,14 @@
                 (0100::/64)</xref> <bcp14>MAY</bcp14> be used to express
               unreachable destinations, in particular if only limited but not
               global IPv4 connectivity is available.  If this is used, it
-              <bcp14>MUST</bcp14> be the only next-hop suboption in one container, clients
-              <bcp14>SHOULD</bcp14> ignore the entire container if this is not respected.  If
-              a client is unable to mark destinations as unreachable in its
-              routing table, it <bcp14>MAY</bcp14> ignore the container and <bcp14>SHOULD</bcp14> indicate
-              a client configuration issue in its administrative interfaces.
+              <bcp14>MUST</bcp14> be the only next-hop paired with the
+              destination prefix in question.  Clients <bcp14>SHOULD</bcp14>
+              ignore the destination prefix entirely if this condition does not
+              hold.
+              If a client is unable to mark destinations as unreachable in its
+              routing table, it <bcp14>MAY</bcp14> ignore the destination
+              prefix and <bcp14>SHOULD</bcp14> indicate a client configuration
+              issue in its administrative interfaces.
           </li>
           <li>
               any unicast IPv6 address <bcp14>MAY</bcp14> be used as next-hop.  This
@@ -376,7 +353,7 @@
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|  Type (TBA1)  |     Length    |          Suboptions           |
+|  Type (TBA1)  |     Length    |     Prefix/nexthop pairs      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
 :                              ...                              :</artwork>
       <dl>
@@ -384,25 +361,25 @@
         <dd>TBA1 (field defined in <xref target="DHCP-OPT"/>)</dd>
         <dt>Length</dt>
         <dd>as defined in <xref target="DHCP-OPT"/></dd>
-        <dt>Suboptions</dt>
-        <dd>zero or more suboptions as defined below</dd>
+        <dt>Prefix/nexthop pairs</dt>
+        <dd>zero or more items as defined below.  Note multiple options
+          are concatenated before processing.</dd>
       </dl>
 
       <section anchor="destopt">
-        <name>Destination prefix</name>
+        <name>Destination prefix and nexthop pair</name>
         <artwork name="Destination prefix suboption">
  0                   1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|    Type = 1   |     Length    | R | prefixlen |
++-+-+-+-+-+-+-+-+
+| R | prefixlen |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                    IPv4 prefix (0 - 4 octets)                 |
+|                      IPv4 prefix (4 octets)                   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   IPv6 addresses (16 octets)                  |
+:                              ...                              :
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</artwork>
         <dl>
-          <dt>Type</dt>
-          <dd>1</dd>
-          <dt>Length</dt>
-          <dd>as defined in <xref target="DHCP-OPT"/></dd>
           <dt>R</dt>
           <dd>Reserved bits.  <bcp14>MUST</bcp14> be sent as zero, <bcp14>MUST</bcp14> be ignored on receipt.</dd>
           <dt>prefixlen</dt>
@@ -410,51 +387,19 @@
           <dt>IPv4 prefix</dt>
           <dd>
             <t>
-                The route's destination prefix, encoded in as few bytes necessary
-                for the given prefixlen value, i.e. calculate length as
-                ceil(prefixlen / 8).
-              <cref>TODO: maybe just ditch minimum length encoding, make it
-                  match other DHCPv4 bits?</cref>
+                The route's destination prefix, with unused bits zeroed.
             </t>
             <t>
-                Valid values are described in <xref target="destinations"/>.
+                Validity and behavior for specific values is described in
+                <xref target="destinations"/>.
             </t>
           </dd>
-        </dl>
-        <t>
-            If the Length field indicates additional data past the IPv4 prefix
-            value, clients <bcp14>MUST</bcp14> ignore it.  Future documents <bcp14>MAY</bcp14> introduce
-            other behavior here and servers <bcp14>MUST NOT</bcp14> send any such data until
-            such a point.
-        </t>
-      </section>
-      <section anchor="nhopt">
-        <name>Next-hop</name>
-        <artwork name="Next-hop suboption">
- 0                   1                   2                   3
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|    Type = 2   |     Length    |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                  IPv6 addresses (n*16 octets)                 |
-:                              ...                              :
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</artwork>
-        <dl>
-          <dt>Type</dt>
-          <dd>2</dd>
-          <dt>Length</dt>
-          <dd>as defined in <xref target="DHCP-OPT"/>, a multiple of 16.</dd>
           <dt>IPv6 addresses</dt>
           <dd>
             <t>
-                One or more IPv6 addresses specifying the nexthop for this
+                The IPv6 addresses specifying the nexthop for this
                 route.  Refer to <xref target="nexthops"/> for valid values and
                 associated behavior.
-              <cref>
-                  TODO: is this a list, or do we just repeat the suboption?
-                  In theory, this could have sub-suboptions, but unlikely to
-                  need?
-              </cref>
             </t>
           </dd>
         </dl>
@@ -566,6 +511,10 @@
     <section numbered="false">
       <name>Revision history (TO BE REMOVED)</name>
       <ul>
+        <li>
+            -02: just use a straight up list of fixed size items (prefix+NH)
+            rather than an excessively complicated suboption.
+        </li>
         <li>
             -01: scrap single-option encoding, use container instead, and
             reference special-purpose IPv6 addresses (e.g. for discard)
